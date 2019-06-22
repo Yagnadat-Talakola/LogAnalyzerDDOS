@@ -1,0 +1,22 @@
+spring:
+  profiles.active: local
+
+---
+spring:
+  profiles: local
+kafka:
+  consumer:
+    consumerBootstrapServers: localhost:9092
+    concurrency: 1
+    sessionTimeoutMs: 15000
+    groupId: test123
+    autoOffsetReset: earliest
+    maxPollRecords: 10
+    topic: apache-log-msg
+    keyDeserializer: org.apache.kafka.common.serialization.StringDeserializer
+    valueDeserializer: org.apache.kafka.common.serialization.StringDeserializer
+    retryBackoffMs: 5
+    maxPollIntervalMs: 30000
+
+
+
