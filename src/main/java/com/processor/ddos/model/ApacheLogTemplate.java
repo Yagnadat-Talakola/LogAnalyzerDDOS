@@ -1,8 +1,10 @@
 package com.processor.ddos.model;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 public class ApacheLogTemplate {
@@ -23,9 +25,9 @@ public class ApacheLogTemplate {
         private String responseStatusCode;
 
         @SerializedName("timestamp")
-        private String timestamp;
+        private LocalDateTime timestamp;
 
-        public ApacheLogTemplate(String ipAddress, String request, String bytesSent, String browser, String responseStatusCode, String timestamp) {
+        public ApacheLogTemplate(String ipAddress, String request, String bytesSent, String browser, String responseStatusCode, LocalDateTime timestamp) {
             this.ipAddress = ipAddress;
             this.request = request;
             this.bytesSent = bytesSent;
@@ -54,7 +56,7 @@ public class ApacheLogTemplate {
             return responseStatusCode;
         }
 
-        public String getTimestamp() {
+        public LocalDateTime getTimestamp() {
             return timestamp;
         }
 
@@ -89,7 +91,7 @@ public class ApacheLogTemplate {
         }
 
         public static ApacheLogTemplate fromJson(String json) {
-            Gson gson = new Gson();
+            Gson gson = new GsonBuilder().registerTypeAdapter(LocalDateTime.class, new LocalDateTimeJsonConverter()).create();
             return gson.fromJson(json, ApacheLogTemplate.class);
         }
 }

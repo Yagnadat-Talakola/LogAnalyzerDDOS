@@ -4,7 +4,7 @@ import java.util.Properties;
 
 public class KafkaConsumerConfig {
 
-    public static final String SSL = "SSL";
+    private static final String SSL = "SSL";
 
     private String groupId;
     private String topic;
@@ -35,8 +35,6 @@ public class KafkaConsumerConfig {
 
     private Long connectionsMaxIdleMs;
     private Integer requestTimeoutMs;
-
-    private Integer offsetRetentionMs;
 
     public Properties createkafkaProp(){
 
