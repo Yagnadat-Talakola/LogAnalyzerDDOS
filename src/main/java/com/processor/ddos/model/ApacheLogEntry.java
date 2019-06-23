@@ -7,13 +7,13 @@ import com.google.gson.annotations.SerializedName;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-public class ApacheLogTemplate {
+public class ApacheLogEntry {
 
         @SerializedName("ip_address")
         private String ipAddress;
 
         @SerializedName("request")
-        private String request;
+        private String requestDetail;
 
         @SerializedName("bytes_sent")
         private String bytesSent;
@@ -27,9 +27,9 @@ public class ApacheLogTemplate {
         @SerializedName("timestamp")
         private LocalDateTime timestamp;
 
-        public ApacheLogTemplate(String ipAddress, String request, String bytesSent, String browser, String responseStatusCode, LocalDateTime timestamp) {
+        public ApacheLogEntry(String ipAddress, String requestDetail, String bytesSent, String browser, String responseStatusCode, LocalDateTime timestamp) {
             this.ipAddress = ipAddress;
-            this.request = request;
+            this.requestDetail = requestDetail;
             this.bytesSent = bytesSent;
             this.browser = browser;
             this.responseStatusCode = responseStatusCode;
@@ -40,8 +40,8 @@ public class ApacheLogTemplate {
             return ipAddress;
         }
 
-        public String getRequest() {
-            return request;
+        public String getRequestDetail() {
+            return requestDetail;
         }
 
         public String getBytesSent() {
@@ -64,9 +64,9 @@ public class ApacheLogTemplate {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            ApacheLogTemplate that = (ApacheLogTemplate) o;
+            ApacheLogEntry that = (ApacheLogEntry) o;
             return Objects.equals(ipAddress, that.ipAddress) &&
-                    Objects.equals(request, that.request) &&
+                    Objects.equals(requestDetail, that.requestDetail) &&
                     Objects.equals(bytesSent, that.bytesSent) &&
                     Objects.equals(browser, that.browser) &&
                     Objects.equals(responseStatusCode, that.responseStatusCode) &&
@@ -75,14 +75,14 @@ public class ApacheLogTemplate {
 
         @Override
         public int hashCode() {
-            return Objects.hash(ipAddress, request, bytesSent, browser, responseStatusCode, timestamp);
+            return Objects.hash(ipAddress, requestDetail, bytesSent, browser, responseStatusCode, timestamp);
         }
 
         @Override
         public String toString() {
             return "ApacheLogTemplate{" +
                     "ipAddress='" + ipAddress + '\'' +
-                    ", request='" + request + '\'' +
+                    ", request='" + requestDetail + '\'' +
                     ", bytesSent='" + bytesSent + '\'' +
                     ", browser='" + browser + '\'' +
                     ", responseStatusCode='" + responseStatusCode + '\'' +
@@ -90,8 +90,8 @@ public class ApacheLogTemplate {
                     '}';
         }
 
-        public static ApacheLogTemplate fromJson(String json) {
+        public static ApacheLogEntry fromJson(String json) {
             Gson gson = new GsonBuilder().registerTypeAdapter(LocalDateTime.class, new LocalDateTimeJsonConverter()).create();
-            return gson.fromJson(json, ApacheLogTemplate.class);
+            return gson.fromJson(json, ApacheLogEntry.class);
         }
 }

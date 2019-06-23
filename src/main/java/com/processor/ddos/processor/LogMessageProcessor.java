@@ -1,8 +1,8 @@
 package com.processor.ddos.processor;
 
+import com.google.common.collect.Iterables;
 import com.processor.ddos.config.KafkaConsumerConfig;
-import com.processor.ddos.model.ApacheLogTemplate;
-import com.processor.ddos.model.RollingWindowObserver;
+import com.processor.ddos.model.ApacheLogEntry;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -12,17 +12,17 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 
-public class MessageProcessor implements Runnable {
+public class LogMessageProcessor implements Runnable {
 
-    private static final Logger logger = LoggerFactory.getLogger(MessageProcessor.class);
+    private static final Logger logger = LoggerFactory.getLogger(LogMessageProcessor.class);
 
     private KafkaConsumerConfig config;
     private KafkaConsumer kafkaConsumer;
-    private RollingWindowObserver manager;
+    private RollingWindowObserver windowObserver;
 
-    public MessageProcessor(KafkaConsumerConfig consumerConfig, RollingWindowObserver rm) {
+    public LogMessageProcessor(KafkaConsumerConfig consumerConfig, RollingWindowObserver windowObserver) {
         this.config = consumerConfig;
-        this.manager = rm;
+        this.windowObserver = windowObserver;
         this.kafkaConsumer = new KafkaConsumer<>(consumerConfig.createkafkaProp());
         this.kafkaConsumer.subscribe(Arrays.asList(this.config.getTopic()));
     }
@@ -30,13 +30,18 @@ public class MessageProcessor implements Runnable {
     @Override
     public void run() {
 
-        //process your messages
         while (true) {
+
             ConsumerRecords<String, String> records = kafkaConsumer.poll(10);
 
             for (ConsumerRecord<String, String> record : records) {
-                ApacheLogTemplate logTemplate = ApacheLogTemplate.fromJson(record.value());
-                this.manager.addEntry(logTemplate);
+                ApacheLogEntry logTemplate = ApacheLogEntry.fromJson(record.value());
+                this.windowObserver.addEntry(logTemplate);
+            }
+
+            if(!records.isEmpty()) {
+                ConsumerRecord<String, String> lastRec = Iterables.getLast(records);
+                System.out.println("Completed processing offset: " + lastRec.offset() + " on partition " + lastRec.partition());
             }
 
         }

@@ -1,30 +1,34 @@
-package com.processor.ddos.model;
+package com.processor.ddos.processor;
+
+import com.processor.ddos.model.WindowStatus;
+import com.processor.ddos.model.ApacheLogEntry;
 
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.processor.ddos.processor.RollingWindowInterface.DURATION;
+import static com.processor.ddos.processor.RollingWindowInterface.RETENTION_PERIOD;
+
 public class RollingWindowObserver implements Runnable {
 
-    private static final Integer RETENTION_PERIOD = 60; //in seconds
-    private static final Integer DURATION = 30; //in seconds
     private static final Integer NUM_ACTIVE_BUCKETS = RETENTION_PERIOD / DURATION;
 
-    private Map<LocalDateTime, RollingWindow> rollingWindowBucketsMap = new ConcurrentHashMap<>();
+    private Map<LocalDateTime, RollingWindowImpl> rollingWindowBucketsMap = new ConcurrentHashMap<>();
 
-    public void addEntry(ApacheLogTemplate message) {
+    public void addEntry(ApacheLogEntry message) {
 
-        Optional<RollingWindow> rw = rollingWindowBucketsMap.entrySet().stream()
+        Optional<RollingWindowImpl> rollingWindow = rollingWindowBucketsMap.entrySet().stream()
                 .filter(x -> !x.getKey().isAfter(message.getTimestamp())
                              && x.getKey().plusSeconds(DURATION).isAfter(message.getTimestamp()))
                 .map(x -> x.getValue()).findAny();
 
-        if(!rw.isPresent()) {
+        if(!rollingWindow.isPresent()) {
             createRollingWindows(message.getTimestamp());
-            rw = Optional.of(rollingWindowBucketsMap.get(message.getTimestamp()));
+            rollingWindow = Optional.of(rollingWindowBucketsMap.get(message.getTimestamp()));
         }
 
-        rw.get().updateCounts(message);
+        rollingWindow.get().addToWindow(message);
     }
 
     public void purgeRollingWindows() {
@@ -54,7 +58,7 @@ public class RollingWindowObserver implements Runnable {
     public void createRollingWindows(LocalDateTime newRWRequest) {
         int i = 0;
         while(i <= NUM_ACTIVE_BUCKETS) {
-            RollingWindow rw = new RollingWindow(newRWRequest.plusSeconds(i * DURATION));
+            RollingWindowImpl rw = new RollingWindowImpl(newRWRequest.plusSeconds(i * DURATION));
             System.out.println("Created a rolling window " + rw.toString());
             rollingWindowBucketsMap.put(rw.getStartTS(), rw);
             i++;
@@ -68,12 +72,15 @@ public class RollingWindowObserver implements Runnable {
             while (true) {
 
                 Thread.sleep(30000);
-
                 rollingWindowBucketsMap.entrySet().stream()
-                        .filter(x -> x.getValue().getStatus() == AlertStatus.NOT_HEALTHY)
+                        .map(x -> {
+                            System.out.println(x.getValue().getWindowStatus() + " => rolling window => " + x.getValue().toString() );
+                            return x;
+                        })
+                        .filter(x -> x.getValue().getWindowStatus() == WindowStatus.NOT_HEALTHY)
                         .forEach(x -> {
                             //write to results directory
-                            System.out.println("Detecting IP Addresses with high traffic " + x.getValue().getHighTrafficIPAddr());
+                            System.out.println("Detecting IP Addresses with high traffic " + x.getValue().getDDOSInfoList());
                         });
 
                 purgeRollingWindows();

@@ -1,4 +1,7 @@
-package com.processor.ddos.model;
+package com.processor.ddos.processor;
+
+import com.processor.ddos.model.WindowStatus;
+import com.processor.ddos.model.ApacheLogEntry;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -6,12 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class RollingWindow {
-
-    private static final String ERROR_STATUS = "503";
-    public static final int REQUEST_THRESHOLD = 250000;
-    public static final int ERROR_THRESHOLD_PERCENTAGE = 75;
-    private static Integer DURATION = 30;
+public class RollingWindowImpl implements RollingWindowInterface {
 
     private LocalDateTime startTS;
     private LocalDateTime endTS;
@@ -19,17 +17,17 @@ public class RollingWindow {
     private Map<String, Integer> ipAddressCountMap;
     private Map<String, Integer> statusCodeCountMap;
 
-    public RollingWindow(LocalDateTime startTS) {
+    public RollingWindowImpl(LocalDateTime startTS) {
         this.startTS = startTS;
         this.endTS = startTS.plusSeconds(DURATION);
         this.ipAddressCountMap = new HashMap<>();
         this.statusCodeCountMap = new HashMap<>();
-        totalRequestCount = 0;
     }
 
-    public void updateCounts(ApacheLogTemplate msg) {
+    @Override
+    public void addToWindow(ApacheLogEntry msg) {
 
-        totalRequestCount++;
+        ++totalRequestCount;
 
         int ipAddrCount = ipAddressCountMap.getOrDefault(msg.getIpAddress(), 0);
         ipAddressCountMap.put(msg.getIpAddress(), ++ipAddrCount);
@@ -58,17 +56,19 @@ public class RollingWindow {
         return totalRequestCount;
     }
 
-    public AlertStatus getStatus() {
+    @Override
+    public WindowStatus getWindowStatus() {
         int status503Count = statusCodeCountMap.getOrDefault(ERROR_STATUS, 0);
-        if(totalRequestCount == 0) return AlertStatus.HEALTHY;
+        if(totalRequestCount == 0) return WindowStatus.HEALTHY;
         int status503Percentage =  (status503Count / totalRequestCount) * 100;
         if(totalRequestCount >= REQUEST_THRESHOLD && status503Percentage > ERROR_THRESHOLD_PERCENTAGE) {
-            return AlertStatus.NOT_HEALTHY;
+            return WindowStatus.NOT_HEALTHY;
         }
-        return AlertStatus.HEALTHY;
+        return WindowStatus.HEALTHY;
     }
 
-    public List<String> getHighTrafficIPAddr() {
+
+    public List<String> getDDOSInfoList() {
         int requestThresholdPerIPAddress = REQUEST_THRESHOLD / DURATION;
         return ipAddressCountMap.entrySet().stream()
                 .filter(x -> x.getValue() >= requestThresholdPerIPAddress)
@@ -82,7 +82,6 @@ public class RollingWindow {
                 "startTS=" + startTS +
                 ", endTS=" + endTS +
                 ", totalRequestCount=" + totalRequestCount +
-                ", ipAddressCountMap=" + ipAddressCountMap +
                 ", statusCodeCountMap=" + statusCodeCountMap +
                 '}';
     }

@@ -1,5 +1,5 @@
 package com.processor.ddos.model;
 
-public enum AlertStatus {
+public enum WindowStatus {
     HEALTHY, NOT_HEALTHY
 }
