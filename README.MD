@@ -3,7 +3,7 @@ The LogAnalyzer accomplishes the following:
 * Reads messages from *apache-log-msg* topic streamed from Kafka. 
 * Processes the messages and applies some known DDoS patterns to filter the IP addresses as threats.
 * Log entries are aggregated into time-series rolling window of 30 seconds duration
-* I decided to use capture the ipAddresses in a time-series rolling window structure because it gives me a better picture of traffic vs time.
+* I decided to capture the ipAddresses in a time-series rolling window structure because it gives me a better picture of traffic vs time.
 * Also accuracy might improve if we narrow down the rolling window duration to smaller window.
 
 **Assumptions**
