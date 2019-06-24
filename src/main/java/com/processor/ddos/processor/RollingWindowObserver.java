@@ -2,7 +2,11 @@ package com.processor.ddos.processor;
 
 import com.processor.ddos.model.WindowStatus;
 import com.processor.ddos.model.ApacheLogEntry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,6 +17,7 @@ import static com.processor.ddos.processor.RollingWindowInterface.RETENTION_PERI
 public class RollingWindowObserver implements Runnable {
 
     private static final Integer NUM_ACTIVE_BUCKETS = RETENTION_PERIOD / DURATION;
+    private static final Logger logger = LoggerFactory.getLogger(RollingWindowObserver.class);
 
     private Map<LocalDateTime, RollingWindowImpl> rollingWindowBucketsMap = new ConcurrentHashMap<>();
 
@@ -20,10 +25,10 @@ public class RollingWindowObserver implements Runnable {
 
         Optional<RollingWindowImpl> rollingWindow = rollingWindowBucketsMap.entrySet().stream()
                 .filter(x -> !x.getKey().isAfter(message.getTimestamp())
-                             && x.getKey().plusSeconds(DURATION).isAfter(message.getTimestamp()))
+                        && x.getKey().plusSeconds(DURATION).isAfter(message.getTimestamp()))
                 .map(x -> x.getValue()).findAny();
 
-        if(!rollingWindow.isPresent()) {
+        if (!rollingWindow.isPresent()) {
             createRollingWindows(message.getTimestamp());
             rollingWindow = Optional.of(rollingWindowBucketsMap.get(message.getTimestamp()));
         }
@@ -33,9 +38,9 @@ public class RollingWindowObserver implements Runnable {
 
     public void purgeRollingWindows() {
 
-        System.out.println("purge rolling windows");
 
-        if(rollingWindowBucketsMap.size() <= NUM_ACTIVE_BUCKETS) {
+        if (rollingWindowBucketsMap.size() <= NUM_ACTIVE_BUCKETS) {
+            logger.info("Nothing to purge");
             return;
         }
 
@@ -47,19 +52,19 @@ public class RollingWindowObserver implements Runnable {
         LocalDateTime max = maxTimestamp.orElse(LocalDateTime.now());
 
         rollingWindowBucketsMap.entrySet().stream()
-                .filter(x -> x.getValue().getStartTS().isBefore(max.minusSeconds(30)))
+                .filter(x -> x.getValue().getStartTS().isBefore(max.minusSeconds(DURATION)))
                 .forEach(x -> {
-                    System.out.println("purging " + x.getValue().toString());
+                    logger.info("Purging rolling window " + x.getValue().toString());
                     rollingWindowBucketsMap.remove(x.getKey(), x.getValue());
-         });
+                });
 
     }
 
     public void createRollingWindows(LocalDateTime newRWRequest) {
         int i = 0;
-        while(i <= NUM_ACTIVE_BUCKETS) {
+        while (i <= NUM_ACTIVE_BUCKETS) {
             RollingWindowImpl rw = new RollingWindowImpl(newRWRequest.plusSeconds(i * DURATION));
-            System.out.println("Created a rolling window " + rw.toString());
+            logger.info("Created a rolling window " + rw.toString());
             rollingWindowBucketsMap.put(rw.getStartTS(), rw);
             i++;
         }
@@ -71,29 +76,42 @@ public class RollingWindowObserver implements Runnable {
         try {
             while (true) {
 
-                Thread.sleep(30000);
+                Thread.sleep(10000);
                 rollingWindowBucketsMap.entrySet().stream()
                         .map(x -> {
-                            System.out.println(x.getValue().getWindowStatus() + " => rolling window => " + x.getValue().toString() );
+                            logger.info(x.getValue().getWindowStatus() + " => rolling window => " + x.getValue().toString());
                             return x;
                         })
                         .filter(x -> x.getValue().getWindowStatus() == WindowStatus.NOT_HEALTHY)
                         .forEach(x -> {
                             //write to results directory
-                            System.out.println("Detecting IP Addresses with high traffic " + x.getValue().getDDOSInfoList());
+                            List<String> ipAddrList = x.getValue().getDDOSInfoList();
+                            writeToFile(ipAddrList);
+                            logger.info("Detecting IP Addresses with high traffic " + x.getValue().getDDOSInfoList());
                         });
 
                 purgeRollingWindows();
 
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
     }
 
-
-
+    private void writeToFile(List<String> ipList) {
+        try {
+            FileWriter fw = new FileWriter("./results", true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            for (String ipAddr : ipList) {
+                bw.write(ipAddr);
+                bw.newLine();
+            }
+            bw.close();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+    }
 
 
 }

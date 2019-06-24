@@ -2,6 +2,8 @@ package com.processor.ddos.processor;
 
 import com.processor.ddos.model.WindowStatus;
 import com.processor.ddos.model.ApacheLogEntry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -16,12 +18,14 @@ public class RollingWindowImpl implements RollingWindowInterface {
     private Integer totalRequestCount;
     private Map<String, Integer> ipAddressCountMap;
     private Map<String, Integer> statusCodeCountMap;
+    private static final Logger logger = LoggerFactory.getLogger(RollingWindowImpl.class);
 
     public RollingWindowImpl(LocalDateTime startTS) {
         this.startTS = startTS;
         this.endTS = startTS.plusSeconds(DURATION);
         this.ipAddressCountMap = new HashMap<>();
         this.statusCodeCountMap = new HashMap<>();
+        this.totalRequestCount = 0;
     }
 
     @Override
@@ -60,7 +64,10 @@ public class RollingWindowImpl implements RollingWindowInterface {
     public WindowStatus getWindowStatus() {
         int status503Count = statusCodeCountMap.getOrDefault(ERROR_STATUS, 0);
         if(totalRequestCount == 0) return WindowStatus.HEALTHY;
-        int status503Percentage =  (status503Count / totalRequestCount) * 100;
+
+        float status503Percentage =  ((float)status503Count / totalRequestCount) * 100;
+        logger.info("Error threshold percentage is " + status503Percentage);
+
         if(totalRequestCount >= REQUEST_THRESHOLD && status503Percentage > ERROR_THRESHOLD_PERCENTAGE) {
             return WindowStatus.NOT_HEALTHY;
         }

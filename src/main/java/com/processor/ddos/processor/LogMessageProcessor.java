@@ -35,13 +35,13 @@ public class LogMessageProcessor implements Runnable {
             ConsumerRecords<String, String> records = kafkaConsumer.poll(10);
 
             for (ConsumerRecord<String, String> record : records) {
-                ApacheLogEntry logTemplate = ApacheLogEntry.fromJson(record.value());
-                this.windowObserver.addEntry(logTemplate);
+                ApacheLogEntry logEntry = ApacheLogEntry.fromJson(record.value());
+                this.windowObserver.addEntry(logEntry);
             }
 
             if(!records.isEmpty()) {
                 ConsumerRecord<String, String> lastRec = Iterables.getLast(records);
-                System.out.println("Completed processing offset: " + lastRec.offset() + " on partition " + lastRec.partition());
+                logger.info("Completed processing offset: " + lastRec.offset() + " on partition " + lastRec.partition());
             }
 
         }

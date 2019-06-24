@@ -14,16 +14,18 @@ public class KafkaConsumerThreadFactory implements ApplicationRunner {
     @Autowired
     private KafkaConsumerConfig kafkaConsumerConfig;
 
-    private static int PARTITION_COUNT = 1;
-
     @Override
     public void run(ApplicationArguments args) {
-        ExecutorService es = Executors.newFixedThreadPool(PARTITION_COUNT * 2);
-        for(int i = 0; i < PARTITION_COUNT; i++) {
+
+        int partitionCount = kafkaConsumerConfig.getConcurrency();
+        ExecutorService es = Executors.newFixedThreadPool(partitionCount * 2);
+
+        for(int i = 0; i < partitionCount; i++) {
             RollingWindowObserver rm = new RollingWindowObserver();
             LogMessageProcessor msg = new LogMessageProcessor(kafkaConsumerConfig, rm);
             es.submit(msg);
             es.submit(rm);
         }
+
     }
 }
