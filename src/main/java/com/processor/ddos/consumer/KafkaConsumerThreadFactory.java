@@ -15,23 +15,29 @@ import java.util.concurrent.Executors;
 public class KafkaConsumerThreadFactory implements ApplicationRunner {
 
     @Autowired
-    private KafkaConsumerConfig kafkaConsumerConfig;
+    private KafkaConsumerConfig config;
 
     @Autowired
-    private RollingWindowOps rollingWindowOperations;
+    private RollingWindowOps operations;
 
     @Override
     public void run(ApplicationArguments args) {
 
-        int partitionCount = kafkaConsumerConfig.getConcurrency();
-        ExecutorService es = Executors.newFixedThreadPool(partitionCount * 2);
+        int partitionCount = config.getConcurrency();
+
+        ExecutorService logConsumerExecutorService = Executors.newFixedThreadPool(partitionCount);
+        ExecutorService observerExecutorService = Executors.newFixedThreadPool(partitionCount );
 
         for(int partitionID = 0; partitionID < partitionCount; partitionID++) {
+
             RollingWindowContainer container = new RollingWindowContainer(partitionID);
-            RollingWindowObserver rollingWindowObserver = new RollingWindowObserver(container, rollingWindowOperations);
-            LogMessageConsumer msg = new LogMessageConsumer(kafkaConsumerConfig, rollingWindowOperations, container);
-            es.submit(msg);
-            es.submit(rollingWindowObserver);
+
+            RollingWindowObserver rollingWindowObserver = new RollingWindowObserver(container, operations);
+            LogMessageConsumer msg = new LogMessageConsumer(config, container, operations);
+
+            logConsumerExecutorService.submit(msg);
+            observerExecutorService.submit(rollingWindowObserver);
+
         }
 
     }

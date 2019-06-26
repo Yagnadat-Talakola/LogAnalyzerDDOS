@@ -61,7 +61,7 @@ public class RollingWindowOperationsImpl implements RollingWindowOps {
         Map<LocalDateTime, RollingWindow> map = container.getRollingWindowContainerMap();
 
         if (map.size() <= NUM_ACTIVE_BUCKETS) {
-            logger.info("Nothing to purge");
+            logger.info("Nothing to purge - found {} active windows in container {}", map.size(), container.getContainerID());
             return;
         }
 

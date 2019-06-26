@@ -30,9 +30,10 @@ public class RollingWindowObserver implements Runnable {
 
         try {
             while (true) {
-                Map<LocalDateTime, RollingWindow> map = container.getRollingWindowContainerMap();
 
                 Thread.sleep(10000); //sleep for 10 seconds
+
+                Map<LocalDateTime, RollingWindow> map = container.getRollingWindowContainerMap();
 
                 map.entrySet().stream()
                         .map(x -> {

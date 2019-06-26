@@ -13,7 +13,7 @@ import static com.processor.ddos.operations.RollingWindowOps.*;
 
 public class RollingWindow {
 
-    private String rollingWindowIdentifier;
+    private String identifier;
     private LocalDateTime startTS;
     private LocalDateTime endTS;
     private Integer totalRequestCount;
@@ -23,7 +23,7 @@ public class RollingWindow {
     private static final Logger logger = LoggerFactory.getLogger(RollingWindow.class);
 
     public RollingWindow(String rollingWindowIdentifier, LocalDateTime startTS) {
-        this.rollingWindowIdentifier = rollingWindowIdentifier;
+        this.identifier = rollingWindowIdentifier;
         this.startTS = startTS;
         this.endTS = startTS.plusSeconds(DURATION);
         this.ipAddressCountMap = new HashMap<>();
@@ -52,7 +52,7 @@ public class RollingWindow {
     }
 
     public String getRollingWindowIdentifier() {
-        return rollingWindowIdentifier;
+        return identifier;
     }
 
     public void incrementRequestCounter() {
@@ -76,8 +76,8 @@ public class RollingWindow {
         int status503Count = getStatusCodeCountMap().getOrDefault(ERROR_STATUS, 0);
 
         float status503Percentage =  ((float)status503Count / getTotalRequestCount()) * 100;
-        logger.info("Error threshold percentage for {} is {}", rollingWindowIdentifier,  status503Percentage);
-        logger.info("Request volume for {} is {}", rollingWindowIdentifier, REQUEST_THRESHOLD);
+        logger.info("Error threshold percentage for {} is {}", identifier,  status503Percentage);
+        logger.info("Request volume for {} is {}", identifier, REQUEST_THRESHOLD);
 
         if(getTotalRequestCount() >= REQUEST_THRESHOLD && status503Percentage > ERROR_THRESHOLD_PERCENTAGE) {
             return RollingWindowStatus.NOT_HEALTHY;
@@ -86,9 +86,8 @@ public class RollingWindow {
     }
 
     public List<String> getDDOSInfoList() {
-        int requestThresholdPerIPAddress = REQUEST_THRESHOLD / DURATION;
         return ipAddressCountMap.entrySet().stream()
-                .filter(x -> x.getValue() >= requestThresholdPerIPAddress)
+                .filter(x -> x.getValue() >= REQUEST_THRESHOLD)
                 .map(x -> x.getKey())
                 .collect(Collectors.toList());
     }
@@ -96,7 +95,7 @@ public class RollingWindow {
     @Override
     public String toString() {
         return "RollingWindow{" +
-                "rollingWindowIdentifier='" + rollingWindowIdentifier + '\'' +
+                "rollingWindowIdentifier='" + identifier + '\'' +
                 ", startTS=" + startTS +
                 ", endTS=" + endTS +
                 ", totalRequestCount=" + totalRequestCount +

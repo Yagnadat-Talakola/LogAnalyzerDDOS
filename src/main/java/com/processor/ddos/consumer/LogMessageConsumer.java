@@ -20,15 +20,15 @@ public class LogMessageConsumer implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(LogMessageConsumer.class);
 
     private KafkaConsumerConfig config;
-    private KafkaConsumer kafkaConsumer;
-    private RollingWindowOps rollingWindowOperations;
+    private KafkaConsumer consumer;
+    private RollingWindowOps operations;
     private RollingWindowContainer container;
 
-    public LogMessageConsumer(KafkaConsumerConfig consumerConfig, RollingWindowOps rollingWindowOperations, RollingWindowContainer container) {
+    public LogMessageConsumer(KafkaConsumerConfig consumerConfig, RollingWindowContainer container, RollingWindowOps operations) {
         this.config = consumerConfig;
-        this.rollingWindowOperations = rollingWindowOperations;
-        this.kafkaConsumer = new KafkaConsumer<>(consumerConfig.createkafkaProp());
-        this.kafkaConsumer.subscribe(Arrays.asList(this.config.getTopic()));
+        this.operations = operations;
+        this.consumer = new KafkaConsumer<>(consumerConfig.createkafkaProp());
+        this.consumer.subscribe(Arrays.asList(this.config.getTopic()));
         this.container = container;
     }
 
@@ -37,17 +37,17 @@ public class LogMessageConsumer implements Runnable {
 
         while (true) {
 
-            ConsumerRecords<String, String> records = kafkaConsumer.poll(10);
+            ConsumerRecords<String, String> records = consumer.poll(10);
 
             for (ConsumerRecord<String, String> record : records) {
                 ApacheLogEntry logEntry = ApacheLogEntry.fromJson(record.value());
-                RollingWindow rw = rollingWindowOperations.getOrCreateRollingWindow(logEntry, container);
-                rollingWindowOperations.updateRollingWindow(logEntry, rw);
+                RollingWindow rw = operations.getOrCreateRollingWindow(logEntry, container);
+                operations.updateRollingWindow(logEntry, rw);
             }
 
             if(!records.isEmpty()) {
                 ConsumerRecord<String, String> lastRec = Iterables.getLast(records);
-                logger.info("Completed processing offset: " + lastRec.offset() + " on partition " + lastRec.partition());
+                logger.info("Completed processing offset: {} on partition {}", lastRec.offset(), lastRec.partition());
             }
 
         }
