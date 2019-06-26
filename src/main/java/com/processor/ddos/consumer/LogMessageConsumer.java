@@ -1,8 +1,11 @@
-package com.processor.ddos.processor;
+package com.processor.ddos.consumer;
 
 import com.google.common.collect.Iterables;
 import com.processor.ddos.config.KafkaConsumerConfig;
 import com.processor.ddos.model.ApacheLogEntry;
+import com.processor.ddos.operations.RollingWindowOps;
+import com.processor.ddos.rollingwindow.RollingWindow;
+import com.processor.ddos.rollingwindow.RollingWindowContainer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -12,19 +15,21 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 
-public class LogMessageProcessor implements Runnable {
+public class LogMessageConsumer implements Runnable {
 
-    private static final Logger logger = LoggerFactory.getLogger(LogMessageProcessor.class);
+    private static final Logger logger = LoggerFactory.getLogger(LogMessageConsumer.class);
 
     private KafkaConsumerConfig config;
     private KafkaConsumer kafkaConsumer;
-    private RollingWindowObserver windowObserver;
+    private RollingWindowOps rollingWindowOperations;
+    private RollingWindowContainer container;
 
-    public LogMessageProcessor(KafkaConsumerConfig consumerConfig, RollingWindowObserver windowObserver) {
+    public LogMessageConsumer(KafkaConsumerConfig consumerConfig, RollingWindowOps rollingWindowOperations, RollingWindowContainer container) {
         this.config = consumerConfig;
-        this.windowObserver = windowObserver;
+        this.rollingWindowOperations = rollingWindowOperations;
         this.kafkaConsumer = new KafkaConsumer<>(consumerConfig.createkafkaProp());
         this.kafkaConsumer.subscribe(Arrays.asList(this.config.getTopic()));
+        this.container = container;
     }
 
     @Override
@@ -36,7 +41,8 @@ public class LogMessageProcessor implements Runnable {
 
             for (ConsumerRecord<String, String> record : records) {
                 ApacheLogEntry logEntry = ApacheLogEntry.fromJson(record.value());
-                this.windowObserver.addEntry(logEntry);
+                RollingWindow rw = rollingWindowOperations.getOrCreateRollingWindow(logEntry, container);
+                rollingWindowOperations.updateRollingWindow(logEntry, rw);
             }
 
             if(!records.isEmpty()) {
