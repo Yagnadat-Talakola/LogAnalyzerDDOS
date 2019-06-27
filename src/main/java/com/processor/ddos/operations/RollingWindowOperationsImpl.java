@@ -17,7 +17,7 @@ import java.util.Optional;
 @Component
 public class RollingWindowOperationsImpl implements RollingWindowOps {
 
-    private static final Integer NUM_ACTIVE_BUCKETS = RETENTION_PERIOD / DURATION;
+    private static final Integer NUM_ACTIVE_BUCKETS = RETENTION_PERIOD / DURATION; // = (300 / 30) 10 with current settings.
     private static final Logger logger = LoggerFactory.getLogger(RollingWindowOperationsImpl.class);
 
     @Override
@@ -50,6 +50,7 @@ public class RollingWindowOperationsImpl implements RollingWindowOps {
             String rollingWindowID = RandomStringUtils.random(10, true, true);
             RollingWindow rw = new RollingWindow(container.getContainerID() + "-" + rollingWindowID, newRWRequest.plusSeconds(i * DURATION));
             logger.info("Created a rolling window {} ", rw.toString());
+            // adding the created Rolling Windows to the Container
             container.getRollingWindowContainerMap().put(rw.getStartTS(), rw);
             i++;
         }
