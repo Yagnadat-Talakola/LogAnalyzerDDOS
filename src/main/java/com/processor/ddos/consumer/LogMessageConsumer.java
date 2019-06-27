@@ -45,6 +45,8 @@ public class LogMessageConsumer implements Runnable {
                 operations.updateRollingWindow(logEntry, rw);
             }
 
+            consumer.commitSync();
+
             if(!records.isEmpty()) {
                 ConsumerRecord<String, String> lastRec = Iterables.getLast(records);
                 logger.info("Completed processing offset: {} on partition {}", lastRec.offset(), lastRec.partition());
