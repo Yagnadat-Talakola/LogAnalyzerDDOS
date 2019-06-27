@@ -77,7 +77,7 @@ public class RollingWindow {
 
         float status503Percentage =  ((float)status503Count / getTotalRequestCount()) * 100;
         logger.info("Error threshold percentage for {} is {}", identifier,  status503Percentage);
-        logger.info("Request volume for {} is {}", identifier, REQUEST_THRESHOLD);
+        logger.info("Request volume for {} is {}", identifier, getTotalRequestCount());
 
         if(getTotalRequestCount() >= REQUEST_THRESHOLD && status503Percentage > ERROR_THRESHOLD_PERCENTAGE) {
             return RollingWindowStatus.NOT_HEALTHY;
