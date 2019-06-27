@@ -16,7 +16,7 @@ kafka:
     keyDeserializer: org.apache.kafka.common.serialization.StringDeserializer
     valueDeserializer: org.apache.kafka.common.serialization.StringDeserializer
     retryBackoffMs: 5
-    maxPollIntervalMs: 30000
+    maxPollIntervalMs: 300000
 
 
 
