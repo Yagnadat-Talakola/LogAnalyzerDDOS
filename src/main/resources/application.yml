@@ -9,7 +9,7 @@ kafka:
     consumerBootstrapServers: localhost:9092
     concurrency: 1
     sessionTimeoutMs: 15000
-    groupId: test12saf
+    groupId: test123
     autoOffsetReset: earliest
     maxPollRecords: 10000
     topic: apache-log-msg
